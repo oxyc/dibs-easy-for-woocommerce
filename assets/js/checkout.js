@@ -1,6 +1,8 @@
 jQuery(function($) {
     const dibs_wc = {
         bodyEl: $('body'),
+        checkoutFormSelector: $( 'form.checkout' ),
+
 
         // Payment method
         paymentMethodEl: $('input[name="payment_method"]'),
@@ -13,6 +15,39 @@ jQuery(function($) {
 
         // Dibs processing order.
         dibsOrderProcessing: false,
+
+        // Mutation observer.
+		observer: new MutationObserver(function(mutationsList) {
+			for ( var mutation of mutationsList ) {
+				if ( mutation.type == 'childList' ) {
+					if( mutation.addedNodes[0] ) {
+                        if ( mutation.addedNodes[0].querySelector("#nets-order-success") ) { // Success.
+                            var dataSuccess = $("#nets-order-success").attr('data-success');
+                            window.dibsRedirectUrl = dataSuccess;
+                            console.log('return_url');
+                            console.log(dataSuccess);
+                            sessionStorage.setItem( 'DIBSRedirectUrl', dataSuccess );
+                            
+                            $('form.checkout').removeClass( 'processing' ).unblock();
+                            dibs_wc.dibsOrderProcessing = false;
+                            dibsCheckout.send('payment-order-finalized', true);
+						} else if( mutation.addedNodes[0].querySelector("#nets-order-failed") ) { // Not used now, but potential error from us.
+                            console.log( 'send finalized false' );
+                            dibsCheckout.send('payment-order-finalized', false);
+                        } else if ( mutation.addedNodes[0].querySelector(".woocommerce-error") ) { // WooCommerce error.
+                            if ("dibs_easy" === $("input[name='payment_method']:checked").val()) {
+                                console.log( 'send finalized false' );
+                                dibsCheckout.send('payment-order-finalized', false);
+                            }
+						}
+					}
+				}
+			}
+		}),
+		
+		config: {
+			childList: true,
+		},
 
         /*
 		 * Document ready function. 
@@ -181,29 +216,7 @@ jQuery(function($) {
 				}
 			}
         },
-        
-        /**
-		 * Handle hashchange triggered when Woo order is created.
-		 */
-        handleHashChange : function(event){
-			console.log('hashchange');
-			var currentHash = location.hash;
-            var splittedHash = currentHash.split("=");
-            console.log(splittedHash[0]);
-            console.log(splittedHash[1]);
-            if(splittedHash[0] === "#dibseasy"){
-                var response = JSON.parse( atob( splittedHash[1] ) );
-                window.dibsRedirectUrl = response.redirect_url;
-                console.log('response.return_url');
-                console.log(response.return_url);
-                sessionStorage.setItem( 'DIBSRedirectUrl', response.return_url );
 
-                $('form.checkout').removeClass( 'processing' ).unblock();
-                dibs_wc.dibsOrderProcessing = false;
-				dibsCheckout.send('payment-order-finalized', true);
-            }
-        },
-        
         /*
 		 * Initiates the script and sets the triggers for the functions.
 		 */
@@ -213,11 +226,13 @@ jQuery(function($) {
 
                 $(document).ready( dibs_wc.documentReady() );
 
+                // Observer
+                dibs_wc.observer.observe( dibs_wc.checkoutFormSelector[0], dibs_wc.config );
+
 				// Extra checkout fields.
 				dibs_wc.bodyEl.on('blur', dibs_wc.extraFieldsSelectorText, dibs_wc.checkFormData);
 				dibs_wc.bodyEl.on('change', dibs_wc.extraFieldsSelectorNonText, dibs_wc.checkFormData);
                 dibs_wc.bodyEl.on('click', 'input#terms', dibs_wc.checkFormData);
-                window.addEventListener("hashchange", dibs_wc.handleHashChange);
 
 			}
 		},
@@ -493,15 +508,7 @@ jQuery(function($) {
             }
         }
     });
-    
-    // When WooCommerce checkout submission fails
-	$(document).on("checkout_error", function () {
-		if ("dibs_easy" === $("input[name='payment_method']:checked").val()) {
-           console.log('responded with payment-order-finalized false');
-           dibsCheckout.send('payment-order-finalized', false);
-		}
-    });
-    
+
     // Suspend DIBS Checkout during WooCommerce checkout update
     $(document).on('update_checkout', function () {
         if ("dibs_easy" === $("input[name='payment_method']:checked").val() && checkout_initiated == 'yes' && paymentId == null ) {

@@ -120,15 +120,11 @@ class DIBS_Easy_Gateway extends WC_Payment_Gateway {
 			if ( ! $order->has_status( array( 'on-hold', 'processing', 'completed' ) ) ) {
 				$this->process_dibs_payment_in_order( $order_id );
 
-				// Add #dibseasy hash to checkout url so we can respond to DIBS that payment can proceed and be finalized in DIBS system.
-				$response = array(
-					'return_url' => $this->get_return_url( $order ),
-					'time'       => time(),
-				);
-				return array(
-					'result'   => 'success',
-					'redirect' => wc_get_checkout_url() . '#dibseasy=' . base64_encode( wp_json_encode( $response ) ),
-				);
+				$notice_string  = __( 'Please wait while we process your order...', 'dibs-easy-for-woocommerce' );
+				$notice_string .= '<div id="nets-order-success" style="display:none" data-success="' . $this->get_return_url( $order ) . '"></div>';
+				wc_add_notice( $notice_string, 'success' );
+				return;
+
 			}
 		} else {
 			$request  = new DIBS_Requests_Create_DIBS_Order( $this->checkout_flow, $order_id );
