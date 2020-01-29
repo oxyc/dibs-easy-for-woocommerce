@@ -18,7 +18,8 @@ jQuery(function($) {
 
         // Mutation observer.
 		observer: new MutationObserver(function(mutationsList) {
-			for ( var mutation of mutationsList ) {
+			for ( i = 0; i < mutationsList.length; i++ ) {
+                var mutation = mutationsList[i];
 				if ( mutation.type == 'childList' ) {
 					if( mutation.addedNodes[0] ) {
                         if ( mutation.addedNodes[0].querySelector("#nets-order-success") ) { // Success.
@@ -32,11 +33,9 @@ jQuery(function($) {
                             dibs_wc.dibsOrderProcessing = false;
                             dibsCheckout.send('payment-order-finalized', true);
 						} else if( mutation.addedNodes[0].querySelector("#nets-order-failed") ) { // Not used now, but potential error from us.
-                            console.log( 'send finalized false' );
                             dibsCheckout.send('payment-order-finalized', false);
                         } else if ( mutation.addedNodes[0].querySelector(".woocommerce-error") ) { // WooCommerce error.
                             if ("dibs_easy" === $("input[name='payment_method']:checked").val()) {
-                                console.log( 'send finalized false' );
                                 dibsCheckout.send('payment-order-finalized', false);
                             }
 						}
@@ -307,6 +306,7 @@ jQuery(function($) {
     // When customer clicks Pay button in Easy. Before redirect to 3DSecure.
     function paymentInitializedListener() {
         dibsCheckout.on('pay-initialized', function(response) {
+            $(document.body).off( 'checkout_error' );
             dibs_wc.dibsOrderProcessing = true;
             $(document.body).trigger('dibs_pay_initialized');
             console.log('dibs_pay_initialized');
