@@ -62,9 +62,7 @@ class DIBS_Requests_Checkout {
 
 		foreach ( $countries as $country ) {
 			$converted_country = dibs_get_iso_3_country( $country );
-			if ( in_array( $converted_country, $supported_dibs_countries ) ) {
-				$converted_countries[] = array( 'countryCode' => $converted_country );
-			}
+			$converted_countries[] = array( 'countryCode' => $converted_country );
 		}
 		return $converted_countries;
 	}
