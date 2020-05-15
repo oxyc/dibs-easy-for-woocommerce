@@ -1,11 +1,30 @@
-<?php
+<?php // phpcs:ignore
+/**
+ * Undocumented class
+ */
 
-abstract class Krokedil_Unit_Test_Case extends WP_UnitTestCase implements KrokedilConstants {
-	protected $isMultiSite = false;
+/**
+ * Undocumented class
+ */
+abstract class AKrokedil_Unit_Test_Case extends WP_UnitTestCase implements IKrokedilConstants, IKrokedil_CRUD {
+	/**
+	 * Undocumented variable
+	 *
+	 * @var boolean
+	 */
+	protected $is_multi_site = false;
+	/**
+	 * A interface that's provide crud functionality.
+	 *
+	 * @var IKrokedil_CRUD
+	 */
+	private $crud;
+
 	/**
 	 * Class constructor.
 	 * Initialize required plugins
 	 *
+	 * @throws Exception Error message.
 	 * @see WP_UnitTestCase
 	 */
 	public function __construct() {
@@ -13,8 +32,14 @@ abstract class Krokedil_Unit_Test_Case extends WP_UnitTestCase implements Kroked
 		parent::__construct();
 	}
 
+
+	/**
+	 * List of a plugins.
+	 *
+	 * @var array
+	 */
 	public $plugins = array(
-		// key is a dir and a value is filename.php
+		// key is a dir and a value is filename.php.
 		'woocommerce' => 'woocommerce.php',
 	);
 
@@ -25,36 +50,67 @@ abstract class Krokedil_Unit_Test_Case extends WP_UnitTestCase implements Kroked
 	 */
 	protected function activate_plugins() {
 		foreach ( $this->plugins as $dir => $plugin_file ) {
-			// if plugin is not already active, activate it then
+			// if a plugin is not already active, activate it then.
 			if ( ! is_plugin_active( self::DS . $dir . self::DS . $plugin_file ) ) {
-				// activate plugin
+				// activate plugin.
 				do_action( 'activate_' . self::PLUGIN_BASENAME . self::DS . $dir . self::DS . $plugin_file );
 			}
 		}
 	}
 
 	/**
-	 * For instance.
-	 * $attributes = array(
-	 *   'user_login'   => 'wp_master',
-	 *   'user_pass'    => '$P$BuWBsZJAjNdqBuaQ3XRR1k0o8GIoGJ1',
-	 *   'user_email'   => 'wp_master@example.com',
-	 *   'display_name' => 'Web user',
-	 *   'user_status'  => 0,
+	 * It must be defined as final to prevent overriding in a subclass definition.
+	 * Prepare the environment for the test.
 	 *
-	 * );
-	 *
-	 * @param array $attributes
 	 * @return void
 	 */
+	final public function setUp() {
+		$this->create();
+		$this->update();
+		$this->view();
+	}
+
+	/**
+	 * Function is called after every test.
+	 *
+	 * @return void
+	 */
+	final public function tearDown() {
+		$this->delete();
+	}
+
+	/**
+	 * Crud setter
+	 *
+	 * @param IKrokedil_CRUD $crud concrete class.
+	 *
+	 * @return void
+	 */
+	public function set_crud( IKrokedil_CRUD $crud ) {
+		$this->crud = $crud;
+	}
+
+	/**
+	 * Helper function for creation user.
+	 *
+	 * @param null       $role of the user.
+	 * @param array|null $attributes of the user.
+	 *
+	 * @return WP_User|null
+	 */
 	public function create_user( $role = null, array $attributes = null ) {
-		$user = null; // wp_user
+		/**
+		 * New user.
+		 *
+		 * @var $user WP_User|int
+		 */
+		$user = null;
 		if ( empty( $attributes ) ) {
-			$user = $this->factory()->user->create_and_get();
+			$user = self::factory()->user->create_and_get();
 		} else {
-			$user = $this->factory()->create( $attributes );
+			$user = self::factory()->user->create( $attributes );
 		}
-		if ( ! empty( $role ) && in_array( $role, self::DEFAULT_WP_ROLES ) ) {
+		if ( ! empty( $role ) && in_array( $role, self::DEFAULT_WP_ROLES, true ) ) {
 			$user->set_role( $role );
 		}
 
@@ -63,13 +119,28 @@ abstract class Krokedil_Unit_Test_Case extends WP_UnitTestCase implements Kroked
 	}
 
 	/**
-	 * Undocumented function
+	 * Create product by type
 	 *
-	 * @param array $data
+	 * @param string $type product type.
+	 * @param array  $data product data.
+	 *
+	 * @return WC_Product
+	 */
+	public static function create_wc_product( $type, $data = [] ) :WC_Product {
+		if ( IKrokedilConstants::PRODUCT_SIMPLE === $type ) {
+			return ( new Krokedil_Simple_Product( $data ) )->create();
+		}
+	}
+
+	/**
+	 * Helper function for creation posts.
+	 *
+	 * @param array $data of the post.
+	 *
 	 * @return void
 	 */
-	public function createPost( array $data ) {
-		$this->factory->users->create( $data );
+	public function create_post( array $data ) {
+		self::factory()->post->create( $data );
 	}
 
 	/**
@@ -77,11 +148,13 @@ abstract class Krokedil_Unit_Test_Case extends WP_UnitTestCase implements Kroked
 	 *
 	 * @param string $plugin_dir plugin directory.
 	 * @param string $plugin_file_name name of plugin file.
+	 *
 	 * @return void
 	 */
 	protected function add_plugin( $plugin_dir, $plugin_file_name ) {
 		if ( ! array_key_exists( $plugin_dir, $this->plugins ) ) {
 			$this->plugins[ $plugin_dir ] = $plugin_file_name;
+			$this->activate_plugins();
 		}
 	}
 }

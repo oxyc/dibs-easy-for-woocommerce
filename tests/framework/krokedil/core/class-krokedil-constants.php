@@ -2,11 +2,11 @@
 
 
 /**
- * KrokedilConstants represents unique place for constants
+ * IKrokedilConstants represents unique place for constants
  *
  * @author Krokedil
  */
-interface KrokedilConstants {
+interface IKrokedilConstants {
 
 	const PLUGIN_BASENAME = '/app/public/wp-content/plugins/';
 	const DS              = DIRECTORY_SEPARATOR;
@@ -21,7 +21,7 @@ interface KrokedilConstants {
 	const CUSTOMER = 'customer';
 
 
-	const DEFAULT_WP_ROLES = array(
+	const DEFAULT_WP_ROLES = [
 		self::SUPER_ADMIN,
 		self::ADMINISTRATOR,
 		self::EDITOR,
@@ -31,5 +31,10 @@ interface KrokedilConstants {
 		self::SHOP_MANAGER,
 		// self::SALESMAN,
 		self::CUSTOMER,
-	);
+	];
+
+	const PRODUCT_SIMPLE   = 'simple';
+	const PRODUCT_EXTERNAL = 'external';
+	const PRODUCT_GROUPED  = 'grouped';
+	const PRODUCT_VARIABLE = 'variation';
 }
