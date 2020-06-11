@@ -54,7 +54,7 @@ class DIBS_Api_Callbacks {
 
 	public function execute_dibs_payment_created_callback( $data, $order_id = '' ) {
 
-		DIBS_Easy::log( 'Payment created API callback. Response data:' . json_encode( $data ) );
+		DIBS_Easy::log( 'Payment created API callback/webhook. Response data:' . json_encode( $data ) );
 		if ( empty( $order_id ) ) { // We're missing Order ID in callback. Try to get it via query by internal reference
 			$order_id = $this->get_order_id_from_payment_id( $data['data']['paymentId'] );
 		}
@@ -130,6 +130,9 @@ class DIBS_Api_Callbacks {
 				if ( true === $order_totals_match ) {
 					$this->set_order_status( $order, $data );
 				}
+			} else {
+				DIBS_Easy::log( 'Payment created API callback/webhook from Nets. WooCommerce order status ok.' );
+				$order->add_order_note( 'Payment created API callback/webhook from Nets. WooCommerce order status ok.' );
 			}
 		}
 	}
